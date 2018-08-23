@@ -81,7 +81,7 @@ public class LoginController {
 			message.setSuccessMessage("User login sucessfull.");
 			List<String> tokenList = new ArrayList<>();
 			tokenList.add(token);
-			LoginHistorySigleton.loginTokenLinkMap.put(userDetails.getEmail(), tokenList);
+			loginHistorySigleton.addLoginTokenLinkMap(userDetails.getEmail(), tokenList);
 		} else {
 			LOG.info("----------------SSO-------------"+ loginRequest.getUserName()+"-11");
 			message.setErrorMessage("Username and password do not match.");
@@ -101,26 +101,26 @@ public class LoginController {
 	}
 
 	private void kickOutUserFromSystem(String userName, LoginHistoryRepository loginHistoryRepository, String message) {
-		String loginHistoryId = LoginHistorySigleton.loginLinkMap.get(userName);
+		String loginHistoryId = loginHistorySigleton.getLoginLinkMapValue(userName);
 		if (loginHistoryId != null && !loginHistoryId.equals("")) {
 			LoginHistory history = loginHistoryRepository.findOne(loginHistoryId);
 			TimeStamp timeStamp = history.getTimeStamp();
 			timeStamp.setLoggedOut(new Date());
 			history.setMessage(message);
 			loginHistoryRepository.save(history);
-			LoginHistorySigleton.loginLinkMap.remove(userName);
-			if (LoginHistorySigleton.loginTokenLinkMap.containsKey(userName)) {
-				List<String> tokenList = LoginHistorySigleton.loginTokenLinkMap.get(userName);
+			loginHistorySigleton.removeLoginLinkMap(userName);
+			if (loginHistorySigleton.checkLoginTokenLinkMapExist(userName)) {
+				List<String> tokenList = loginHistorySigleton.getLoginTokenLinkMapValue(userName);
 				for (String token : tokenList) {
 					ExpiringCacheSingleton.map.remove(token);
 				}
-				LoginHistorySigleton.loginTokenLinkMap.remove(userName);
+				loginHistorySigleton.removeLoginTokenLinkMap(userName);
 			}
 		}
 	}
 
 	private boolean isUserAlreadyLoggedIn(String userName) {
-		if (LoginHistorySigleton.loginLinkMap.containsKey(userName)) {
+		if (loginHistorySigleton.checkLoginLinkMapExist(userName)) {
 			return true;
 		}
 		return false;
@@ -162,7 +162,7 @@ public class LoginController {
 
 		loginHistory.setTimeStamp(timeStamp);
 		LoginHistory history = loginHistoryRepository.save(loginHistory);
-		LoginHistorySigleton.loginLinkMap.put(userName, history.getId());
+		loginHistorySigleton.addLoginLinkMap(userName, history.getId());
 	}
 
 	public boolean validateLogedInUser(HttpServletRequest request, HttpServletResponse response, String userName,

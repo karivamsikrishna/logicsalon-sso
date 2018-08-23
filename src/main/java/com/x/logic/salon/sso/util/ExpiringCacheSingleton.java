@@ -6,7 +6,7 @@ public class ExpiringCacheSingleton {
 	public final static int LOGIN_SLEEP_TIME = 300000;
 
 	public ExpiringCacheSingleton() {
-		synchronized (map) {
+		synchronized (ExpiringCacheSingleton.class) {
 			if (map == null) {
 				getMapInstance();
 			}

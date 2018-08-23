@@ -28,6 +28,14 @@ public class LoginHistorySigleton {
 	public String getLoginLinkMapValue(String key) {
 		return loginLinkMap.get(key);
 	}
+	
+	public void removeLoginLinkMap(String key) {
+		loginLinkMap.remove(key);
+	}
+	
+	public boolean checkLoginLinkMapExist(String key) {
+		return loginLinkMap.containsKey(key);
+	}
 
 	public void addLoginTokenLinkMap(String key, List<String> value) {
 		loginTokenLinkMap.put(key, value);
@@ -35,5 +43,13 @@ public class LoginHistorySigleton {
 
 	public List<String> getLoginTokenLinkMapValue(String key) {
 		return loginTokenLinkMap.get(key);
+	}
+	
+	public void removeLoginTokenLinkMap(String key) {
+		loginTokenLinkMap.remove(key);
+	}
+
+	public boolean checkLoginTokenLinkMapExist(String key) {
+		return loginTokenLinkMap.containsKey(key);
 	}
 }
