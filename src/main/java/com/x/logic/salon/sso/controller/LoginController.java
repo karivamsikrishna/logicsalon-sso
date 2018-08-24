@@ -28,12 +28,11 @@ import com.x.logic.salon.sso.util.LoginHistorySigleton;
 public class LoginController {
 
 	private final Logger LOG = LoggerFactory.getLogger(getClass());
-	LoginHistorySigleton loginHistorySigleton;
-	ExpiringCacheSingleton cacheSingleton;
+	LoginHistorySigleton loginHistorySigleton = LoginHistorySigleton.getInstance();
+	ExpiringCacheSingleton cacheSingleton = ExpiringCacheSingleton.getInstance();
 
 	public LoginController() {
-		loginHistorySigleton = new LoginHistorySigleton();
-		cacheSingleton = new ExpiringCacheSingleton();
+		//cacheSingleton = new ExpiringCacheSingleton();
 	}
 
 	public boolean validateLoginRequest(LoginRequest loginRequest) {
@@ -82,6 +81,7 @@ public class LoginController {
 			List<String> tokenList = new ArrayList<>();
 			tokenList.add(token);
 			loginHistorySigleton.addLoginTokenLinkMap(userDetails.getEmail(), tokenList);
+			makeLoginAuditEntry(userDetails.getEmail(), loginHistoryRepository);
 		} else {
 			LOG.info("----------------SSO-------------"+ loginRequest.getUserName()+"-11");
 			message.setErrorMessage("Username and password do not match.");
@@ -89,7 +89,7 @@ public class LoginController {
 
 		loginResponse.setMessage(message);
 
-		makeLoginAuditEntry(userDetails.getEmail(), loginHistoryRepository);
+		
 		return loginResponse;
 	}
 
@@ -112,7 +112,7 @@ public class LoginController {
 			if (loginHistorySigleton.checkLoginTokenLinkMapExist(userName)) {
 				List<String> tokenList = loginHistorySigleton.getLoginTokenLinkMapValue(userName);
 				for (String token : tokenList) {
-					ExpiringCacheSingleton.map.remove(token);
+					cacheSingleton.map.remove(token);
 				}
 				loginHistorySigleton.removeLoginTokenLinkMap(userName);
 			}
@@ -129,7 +129,7 @@ public class LoginController {
 	private void setTokenIntoCache(String token, UserDetails userDetails) {
 		eriseSencitiveInformation(userDetails);
 		Gson gson = new Gson();
-		ExpiringCacheSingleton.map.put(token, gson.toJson(userDetails), ExpiringCacheSingleton.LOGIN_SLEEP_TIME);
+		cacheSingleton.map.put(token, gson.toJson(userDetails), ExpiringCacheSingleton.LOGIN_SLEEP_TIME);
 	}
 
 	private void eriseSencitiveInformation(UserDetails userDetails) {
@@ -169,10 +169,10 @@ public class LoginController {
 			LoginHistoryRepository loginHistoryRepository) {
 
 		String token = request.getHeader("auth-token");
-		if (token != null && "".equals(token) && ExpiringCacheSingleton.map.containsKey(token)) {
-			String value = ExpiringCacheSingleton.map.get(token);
+		if (token != null && "".equals(token) && cacheSingleton.map.containsKey(token)) {
+			String value = cacheSingleton.map.get(token);
 			String newToken = UUID.randomUUID().toString();
-			ExpiringCacheSingleton.map.put(newToken, value, ExpiringCacheSingleton.LOGIN_SLEEP_TIME);
+			cacheSingleton.map.put(newToken, value, ExpiringCacheSingleton.LOGIN_SLEEP_TIME);
 			response.addHeader("auth-token", newToken);
 			return true;
 		} else {
